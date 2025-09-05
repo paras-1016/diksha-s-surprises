@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Diksha Surprise — Unlock</title>
+<style>
+  :root{--accent:#ff4675;--muted:#cbdbe6}
+  body{font-family:Inter,system-ui,Arial;margin:0;background:#080812;color:#eef2f8;display:flex;align-items:center;justify-content:center;height:100vh;padding:18px}
+  .card{width:100%;max-width:540px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border-radius:14px;padding:22px;box-shadow:0 12px 40px rgba(0,0,0,0.6);text-align:center}
+  h1{color:var(--accent);margin:0 0 8px;font-size:20px}
+  p{color:var(--muted);margin:6px 0 12px;line-height:1.4}
+  .lockedBox{background:rgba(255,255,255,0.02);padding:12px;border-radius:10px;margin-bottom:12px}
+  .count{font-weight:700;color:#ffd6e6}
+  input[type="password"]{padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);width:100%;max-width:320px;margin-top:10px;background:rgba(255,255,255,0.02);color:#fff;font-size:16px}
+  .btn{margin-top:12px;padding:11px 18px;border-radius:10px;background:var(--accent);border:none;color:#fff;font-weight:700;cursor:pointer}
+  .hint{font-size:13px;color:#9fb0c8;margin-top:8px}
+  .videoWrap{margin-top:14px;display:none}
+  iframe, video{width:100%;height:320px;border-radius:10px;border:0}
+  .error{color:#ffb4c2;margin-top:10px}
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>🎁 A Surprise for Diksha</h1>
+    <p>Scan / open this link. The surprise opens only after the unlock time — and then only with the secret passkey. 🕊</p>
+
+    <div id="locked" class="lockedBox">
+      <div>🔒 <strong id="statusText">Checking time…</strong></div>
+      <div class="count" id="countdown"></div>
+    </div>
+
+    <!-- Passkey area (hidden until unlock time) -->
+    <div id="passArea" style="display:none">
+      <p class="hint">Enter the secret passkey you will receive from Paras:</p>
+      <input id="passInput" type="password" placeholder="Enter passkey" />
+      <div><button class="btn" id="unlockBtn">Unlock Surprise</button></div>
+      <div id="error" class="error"></div>
+      <div class="hint">If audio doesn't start automatically, tap the play button inside the video.</div>
+    </div>
+
+    <!-- Video container (revealed on correct passkey) -->
+    <div id="videoWrap" class="videoWrap">
+      <!-- Embedded Google Drive preview (replace FILE_ID in script) -->
+      <iframe id="gdvid" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    </div>
+
+    <p class="hint">Note: Unlock uses the phone's local time. Make sure device clock & timezone are correct.</p>
+  </div>
+
+<script>
+/* ===== CONFIG - change these ===== */
+const UNLOCK_HOUR = 0;            // 24-hour format (22 = 10 PM). change if needed.
+const CORRECT_PASSKEY = "1016";  // replace with your secret passkey
+const DRIVE_FILE_ID = "https://drive.google.com/file/d/1NQruTooAZxUV2_iM0gyOPXECPj_Wd_E7/view?usp=sharing"; // put your Google Drive file id here
+/* ================================= */
+
+const countdownEl = document.getElementById('countdown');
+const statusText = document.getElementById('statusText');
+const locked = document.getElementById('locked');
+const passArea = document.getElementById('passArea');
+const unlockBtn = document.getElementById('unlockBtn');
+const passInput = document.getElementById('passInput');
+const errorEl = document.getElementById('error');
+const videoWrap = document.getElementById('videoWrap');
+const gdif = document.getElementById('gdvid');
+
+function formatTwo(n){ return n<10 ? '0'+n : n; }
+
+function checkTime(){
+  const now = new Date();
+  const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), UNLOCK_HOUR, 0, 0);
+  const diff = target - now;
+
+  if (diff <= 0) {
+    // unlocked by time — show passkey box
+    statusText.innerText = "⏳ Time reached — Enter passkey to unlock!";
+    countdownEl.innerText = "";
+    passArea.style.display = 'block';
+  } else {
+    // still locked
+    const h = Math.floor(diff/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    const s = Math.floor((diff%60000)/1000);
+    countdownEl.innerText = `Opens in ${h}h ${m}m ${s}s`;
+    statusText.innerText = "🔒 Surprise locked — come back at " + formatTwo(UNLOCK_HOUR) + ":00";
+    passArea.style.display = 'none';
+  }
+}
+
+// run every second
+setInterval(checkTime,1000);
+checkTime();
+
+// Unlock button event
+unlockBtn.addEventListener('click', function(){
+  const val = passInput.value.trim();
+  errorEl.innerText = "";
+  if(!val){ errorEl.innerText = "Enter the passkey."; return; }
+  if(val === CORRECT_PASSKEY){
+    // show video iframe
+    const embed = "https://drive.google.com/file/d/1NQruTooAZxUV2_iM0gyOPXECPj_Wd_E7/view?usp=sharing";
+    gdif.src = embed;
+    videoWrap.style.display = 'block';
+    // hide lock/pass
+    locked.style.display = 'none';
+    passArea.style.display = 'none';
+    // scroll to video on small screens
+    setTimeout(()=> { window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}); }, 450);
+  } else {
+    errorEl.innerText = "❌ Wrong passkey — try again.";
+  }
+});
+</script>
+</body>
+</html>
